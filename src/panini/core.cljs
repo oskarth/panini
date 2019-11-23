@@ -1,5 +1,6 @@
 (ns ^:figwheel-hooks panini.core
   (:require
+   [cljs.reader :as reader]
    [cljs.pprint :as pprint]
    [goog.dom :as gdom]
    [rum.core :as rum]
@@ -98,9 +99,33 @@ full-time       = partial-time time-offset
 
 (defn multiply [a b] (* a b))
 
+(def ex-rules
+  {:date-fullyear (comp int str)
+   :date-month    (comp int str)
+   :date-mday     (comp int str)
+   :time-hour     (comp int str)
+   :time-minute   (comp int str)
+   :time-second   (comp int str)})
+
+;; ok, problem - we need to have a repl here
+;; (reader/read-string p/ex-rules-str)
+;; returns a list, not actual fn.
+;; Alternatively, we can manually figure this out, ie have preludes then merge. Requires a lot of data wrangling though.
+(def ex-rules-str
+  "{:date-fullyear (comp int str)
+   :date-month    (comp int str)
+   :date-mday     (comp int str)
+   :time-hour     (comp int str)
+   :time-minute   (comp int str)
+   :time-second   (comp int str)}")
+
+;; reader/read-string ex-rules-str
+
 ;; define your app data so that it doesn't get over-written on reload
 (defonce app-state (atom {:text "Panini - ABNF editor"
                           :grammar-error ""
+                          :rules ex-rules-str
+                          :transformer {}
                           :input example-dt
                           :grammar iso8601-grammar-hide
                           ;; this is derived data
@@ -124,19 +149,33 @@ full-time       = partial-time time-offset
 (defn try-parse-input! [x]
   (swap! app-state assoc :input x))
 
-(defn parse-or-error [{:keys [parser input]}]
+;; XXX: no validation, YOLO
+;; TODO: Catch bad forms
+(defn try-parse-rules! [rules]
+  (let [form (reader/read-string rules)]
+    (prn "FROM:" (type (:date-fullyear form))  #_((:date-fullyear form) "1" "2" "3"))
+    (if (map? form)
+      (swap! app-state assoc
+             :rules rules
+             :transformer form)
+      (swap! app-state assoc
+             :rules rules))))
+             ;; TODO: show errors
+
+(defn parse-or-error [{:keys [parser input transformer]}]
   (if (insta/failure? (parser input))
     (pr-str (parser input))
     (with-out-str
       (pprint/pprint
        (insta/transform
-        {:date-fullyear (comp int str)
-         :date-month    (comp int str)
-         :date-mday     (comp int str)
-         :time-hour     (comp int str)
-         :time-minute   (comp int str)
-         :time-second   (comp int str)
-         }
+        {};; transformer
+        ;; TODO: We want this
+        #_{:date-fullyear (comp int str)
+           :date-month    (comp int str)
+           :date-mday     (comp int str)
+           :time-hour     (comp int str)
+           :time-minute   (comp int str)
+           :time-second   (comp int str)}
         (parser input))))))
 
 (defn get-app-element []
@@ -153,8 +192,8 @@ full-time       = partial-time time-offset
        [:textarea {:type      "text"
                    :value     (:input (rum/react app-state))
                    :allow-full-screen true
-                   :autofocus  true
-                   :spellcheck false
+                   :autoFocus  true
+                   :spellCheck false
                    :id        "insta-input"
                    :class     ["input_active" "input_error"]
                    :style     {:background-color "#EEE"
@@ -165,17 +204,17 @@ full-time       = partial-time time-offset
 
        ;; TODO: Rewrite rules here
        [:textarea {:type      "text"
-                   :value     "rules"
+                   :value     (:rules (rum/react app-state))
                    :allow-full-screen true
-                   :autofocus  true
-                   :spellcheck false
+                   :autoCocus  true
+                   :spellCheck false
                    :id        "insta-input-2"
                    :class     ["input_active" "input_error"]
                    :style     {:background-color "#EEE"
                                :width 600
                                :height 100}
                    :on-change (fn [e]
-                                (prn "rules" e))}]
+                                (try-parse-rules! (.. e -target -value)))}]
 
        #_[:h3 "Result"]
        [:pre (parse-or-error (rum/react app-state))]]
@@ -184,7 +223,7 @@ full-time       = partial-time time-offset
        [:textarea {:type      "text"
                    :value     (:grammar (rum/react app-state))
                    :allow-full-screen true
-                   :spellcheck false
+                   :spellCheck false
                    :id        "insta-grammar"
                    :class     ["input_active" "input_error"]
                    :style     {:background-color "#EEE"
