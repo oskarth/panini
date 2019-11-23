@@ -1,10 +1,8 @@
-# panini
+# Panini
 
-FIXME: Write a one-line description of your library/project.
+Panini is a live ABNF editor based on Instaparse.
 
-## Overview
-
-FIXME: Write a paragraph about the library/project and highlight its goals.
+See it running live [here](https://oskarth.github.io/panini/).
 
 ## Development
 
@@ -29,9 +27,18 @@ To create a production build run:
 	lein clean
 	lein fig:min
 
+## Deployment
+
+Create a production build (`dev-main.js`) as above and copy assets to root folder:
+
+```
+cp resources/public/index.html .
+cp resources/public/cljs-out/dev-main.js cljs-out
+cp resources/public/css/style.css css/
+```
 
 ## License
 
-Copyright © 2018 FIXME
+Copyright © 2019 oskarth
 
 Distributed under the Eclipse Public License either version 1.0 or (at your option) any later version.
