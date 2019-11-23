@@ -4,7 +4,7 @@
    [rum.core :as rum]
    [instaparse.core :as insta]))
 
-;; TODO: Show errors
+;; TODO: Editable textarea for grammar
 ;; TODO: Enable ANBF
 
 ;; Instaparse
@@ -27,6 +27,14 @@
 (defonce app-state (atom {:text "Panini - ABNF editor"
                           :input "aaaaabbbaaaabbb"}))
 
+;; Naive mode, doesn't mind bad input
+(defn try-parse-input! [x]
+  (swap! app-state assoc :input x))
+
+;; Can use insta/failure? here for error message
+(defn parse-or-error [input]
+  (pr-str (as-and-bs input)))
+
 (defn get-app-element []
   (gdom/getElement "app"))
 
@@ -43,11 +51,10 @@
               :class     ["input_active" "input_error"]
               :style     {:background-color "#EEE"}
               :on-change (fn [e]
-                           (let [x (.. e -target -value)]
-                             (swap! app-state assoc :input x)))}]
+                           (try-parse-input! (.. e -target -value)))}]
      #_[:p (str (:input (rum/react app-state)))]
      [:h3 "Instaparse result"]
-     [:p (str (as-and-bs (:input (rum/react app-state))))]]))
+     [:pre (parse-or-error (:input (rum/react app-state)))]]))
 
 (defn mount [el]
   (rum/mount (hello-world) el))
