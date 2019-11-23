@@ -54,7 +54,9 @@
   (swap! app-state assoc :input x))
 
 (defn parse-or-error [{:keys [parser input]}]
-  (pr-str (parser input)))
+  (if (insta/failure? (parser input))
+    (pr-str (parser input))
+    (with-out-str (cljs.pprint/pprint (parser input)))))
 
 (defn get-app-element []
   (gdom/getElement "app"))
