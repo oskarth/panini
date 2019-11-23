@@ -2,6 +2,8 @@
 
 Panini is a live ABNF editor based on Instaparse.
 
+![Demo](panini-demo.gif)
+
 See it running live [here](https://oskarth.github.io/panini/).
 
 ## Development
