@@ -5,7 +5,6 @@
    [instaparse.core :as insta]))
 
 ;; TODO: Editable textarea for grammar
-;; TODO: Enable ANBF
 
 ;; Instaparse
 
@@ -15,7 +14,13 @@
      A = 'a'+
      B = 'b'+")
 
+(def grammar-day
+  "day = 'mon' / 'tue' / 'wed' / 'thu' / 'fri' / 'sat' / 'sun'")
+
 (def as-and-bs (insta/parser grammar))
+
+(def weekday-parser
+  (insta/parser grammar-day :input-format :abnf))
 
 ;; Rum and Figwheel
 
@@ -33,17 +38,17 @@
 
 ;; Can use insta/failure? here for error message
 (defn parse-or-error [input]
-  (pr-str (as-and-bs input)))
+  (pr-str (weekday-parser input)))
 
 (defn get-app-element []
   (gdom/getElement "app"))
 
 (rum/defc hello-world < rum/reactive []
-  (let [input "aaaaabbbaaaabbb"]
+  (let [input "mon"]
     [:div
      [:h1 (:text @app-state)]
      [:h3 "Instaparse grammar"]
-     [:p (pr-str as-and-bs)]
+     [:p (pr-str weekday-parser)]
      [:h3 "Instaparse input"]
      [:input {:type      "text"
               :allow-full-screen true
