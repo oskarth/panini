@@ -1,5 +1,6 @@
 (ns ^:figwheel-hooks panini.core
   (:require
+   [cljs.pprint :as pprint]
    [goog.dom :as gdom]
    [rum.core :as rum]
    [instaparse.core :as insta]))
@@ -69,7 +70,7 @@ S-HUGZ-OK = ':S-HUGZ-OK'
 (defn parse-or-error [{:keys [parser input]}]
   (if (insta/failure? (parser input))
     (pr-str (parser input))
-    (with-out-str (cljs.pprint/pprint (parser input)))))
+    (with-out-str (pprint/pprint (parser input)))))
 
 (defn get-app-element []
   (gdom/getElement "app"))
