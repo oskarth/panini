@@ -27,6 +27,8 @@ To create a production build run:
 	lein clean
 	lein fig:min
 
+NOTE: Use `lein fig:minsimple` for now due to some issues with `pprint` and advanced optimizations.
+
 ## Deployment
 
 Create a production build (`dev-main.js`) as above and copy assets to root folder:
