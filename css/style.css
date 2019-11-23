@@ -1,0 +1,30 @@
+body {
+    margin: 0 auto;
+    max-width: 100em;
+    font-family: "Helvetica", "Arial", sans-serif;
+    line-height: 1.5;
+    color: #555;
+}
+
+#wrapper {
+    display: flex;
+}
+
+#left {
+    flex: 0 0 50%;
+}
+
+#right {
+    flex: 1;
+}
+
+h1,
+h2,
+strong {
+    color: #333;
+}
+
+h2 {
+    margin-top: 1em;
+    padding-top: 1em;
+}

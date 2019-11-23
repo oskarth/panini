@@ -6,6 +6,7 @@
 
 ;; TODO: Better example
 ;; TODO: Deploy to GH pages
+;; TODO: Fix README
 
 ;; Instaparse
 
