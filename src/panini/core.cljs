@@ -54,6 +54,35 @@ time-offset     = 'Z' / time-numoffset
 partial-time    = time-hour ':' time-minute ':' time-second
 [time-secfrac]
 full-time       = partial-time time-offset
+
+; hide field
+<DIGIT>       =  %x30-39
+
+  ")
+
+(def iso8601-grammar-hide
+  "
+
+; ISO8601 - https://tools.ietf.org/rfc/rfc3339.txt
+date-time       = full-date <'T'> full-time
+full-date       = date-fullyear <'-'> date-month <'-'> date-mday
+date-fullyear   = 4DIGIT
+date-month      = 2DIGIT  ; 01-12
+date-mday       = 2DIGIT  ; 01-28, 01-29, 01-30, 01-31 based on
+; month/year
+time-hour       = 2DIGIT  ; 00-23
+time-minute     = 2DIGIT  ; 00-59
+time-second     = 2DIGIT  ; 00-58, 00-59, 00-60 based on leap second
+; rules
+time-secfrac    = '.' 1*DIGIT
+time-numoffset  = ('+' / '-') time-hour <':'> time-minute
+<time-offset>     = 'Z' / time-numoffset
+
+<partial-time>    = time-hour <':'> time-minute <':'> time-second
+<[time-secfrac]>
+full-time       = partial-time time-offset
+
+<DIGIT>       =  %x30-39
   ")
 
 (def weekday-parser
@@ -65,7 +94,7 @@ full-time       = partial-time time-offset
   (insta/parser zmq-ex-grammar :input-format :abnf))
 
 (def iso8601-parser
-  (insta/parser iso8601-grammar :input-format :abnf))
+  (insta/parser iso8601-grammar-hide :input-format :abnf))
 
 (defn multiply [a b] (* a b))
 
@@ -73,7 +102,7 @@ full-time       = partial-time time-offset
 (defonce app-state (atom {:text "Panini - ABNF editor"
                           :grammar-error ""
                           :input example-dt
-                          :grammar iso8601-grammar
+                          :grammar iso8601-grammar-hide
                           ;; this is derived data
                           :parser iso8601-parser
                           }))
@@ -98,7 +127,17 @@ full-time       = partial-time time-offset
 (defn parse-or-error [{:keys [parser input]}]
   (if (insta/failure? (parser input))
     (pr-str (parser input))
-    (with-out-str (pprint/pprint (parser input)))))
+    (with-out-str
+      (pprint/pprint
+       (insta/transform
+        {:date-fullyear (comp int str)
+         :date-month    (comp int str)
+         :date-mday     (comp int str)
+         :time-hour     (comp int str)
+         :time-minute   (comp int str)
+         :time-second   (comp int str)
+         }
+        (parser input))))))
 
 (defn get-app-element []
   (gdom/getElement "app"))
