@@ -4,6 +4,9 @@
    [rum.core :as rum]
    [instaparse.core :as insta]))
 
+;; TODO: Show errors
+;; TODO: Enable ANBF
+
 ;; Instaparse
 
 (def grammar
@@ -21,21 +24,30 @@
 (defn multiply [a b] (* a b))
 
 ;; define your app data so that it doesn't get over-written on reload
-(defonce app-state (atom {:text "Panini - ABNF editor"}))
+(defonce app-state (atom {:text "Panini - ABNF editor"
+                          :input "aaaaabbbaaaabbb"}))
 
 (defn get-app-element []
   (gdom/getElement "app"))
 
-(rum/defc hello-world []
-  (let [input "aaaaabbbaaaabb"]
+(rum/defc hello-world < rum/reactive []
+  (let [input "aaaaabbbaaaabbb"]
     [:div
      [:h1 (:text @app-state)]
      [:h3 "Instaparse grammar"]
      [:p (pr-str as-and-bs)]
      [:h3 "Instaparse input"]
-     [:p (str input)]
+     [:input {:type      "text"
+              :allow-full-screen true
+              :id        "comment"
+              :class     ["input_active" "input_error"]
+              :style     {:background-color "#EEE"}
+              :on-change (fn [e]
+                           (let [x (.. e -target -value)]
+                             (swap! app-state assoc :input x)))}]
+     #_[:p (str (:input (rum/react app-state)))]
      [:h3 "Instaparse result"]
-     [:p (str (as-and-bs input))]]))
+     [:p (str (as-and-bs (:input (rum/react app-state))))]]))
 
 (defn mount [el]
   (rum/mount (hello-world) el))
