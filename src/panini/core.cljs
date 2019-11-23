@@ -4,7 +4,8 @@
    [rum.core :as rum]
    [instaparse.core :as insta]))
 
-;; TODO: Editable textarea for grammar
+;; TODO: Better example
+;; TODO: Deploy to GH pages
 
 ;; Instaparse
 
@@ -30,15 +31,29 @@
 
 ;; define your app data so that it doesn't get over-written on reload
 (defonce app-state (atom {:text "Panini - ABNF editor"
-                          :input "aaaaabbbaaaabbb"}))
+                          :input ""
+                          :grammar grammar-day
+                          :grammar-error ""
+                          ;; this is derived data
+                          :parser weekday-parser}))
 
-;; Naive mode, doesn't mind bad input
+;; TODO: Error should be in a more specific "failure-type", not in js/Error e
+(defn try-parse-grammar! [grammar]
+  (try (insta/get-failure (insta/parser grammar :input-format :abnf))
+       (swap! app-state assoc
+              :parser (insta/parser grammar)
+              :grammar grammar
+              :grammar-error "")
+       (catch :default e
+         (swap! app-state assoc
+                :grammar grammar
+                :grammar-error e))))
+
 (defn try-parse-input! [x]
   (swap! app-state assoc :input x))
 
-;; Can use insta/failure? here for error message
-(defn parse-or-error [input]
-  (pr-str (weekday-parser input)))
+(defn parse-or-error [{:keys [parser input]}]
+  (pr-str (parser input)))
 
 (defn get-app-element []
   (gdom/getElement "app"))
@@ -48,18 +63,28 @@
     [:div
      [:h1 (:text @app-state)]
      [:h3 "Instaparse grammar"]
-     [:p (pr-str weekday-parser)]
+     [:textarea {:type      "text"
+                 :value     (:grammar (rum/react app-state))
+                 :allow-full-screen true
+                 :id        "insta-grammar"
+                 :class     ["input_active" "input_error"]
+                 :style     {:background-color "#EEE"
+                             :width 400
+                             :height 400}
+                 :on-change (fn [e]
+                              (try-parse-grammar! (.. e -target -value)))}]
+     [:pre (:grammar-error (rum/react app-state))]
      [:h3 "Instaparse input"]
      [:input {:type      "text"
+              :value     (:input (rum/react app-state))
               :allow-full-screen true
-              :id        "comment"
+              :id        "insta-input"
               :class     ["input_active" "input_error"]
               :style     {:background-color "#EEE"}
               :on-change (fn [e]
                            (try-parse-input! (.. e -target -value)))}]
-     #_[:p (str (:input (rum/react app-state)))]
      [:h3 "Instaparse result"]
-     [:pre (parse-or-error (:input (rum/react app-state)))]]))
+     [:pre (parse-or-error (rum/react app-state))]]))
 
 (defn mount [el]
   (rum/mount (hello-world) el))
