@@ -8,6 +8,9 @@
 (def grammar-day
   "day = 'mon' / 'tue' / 'wed' / 'thu' / 'fri' / 'sat' / 'sun'")
 
+;; 1996-12-19T16:39:57-08:00
+(def example-dt "2019-11-23T22:36:50.52Z")
+
 (def zmq-ex-grammar
   "; http://zguide.zeromq.org/py:chapter7#Initial-Design-Cut-the-Protocol
 nom-protocol    = open-peering *use-peering
@@ -31,6 +34,28 @@ C-HUGZ-OK = ':C-HUGZ-OK'
 S-HUGZ-OK = ':S-HUGZ-OK'
 ")
 
+(def iso8601-grammar
+  "
+; ISO8601 - https://tools.ietf.org/rfc/rfc3339.txt
+date-time       = full-date 'T' full-time
+full-date       = date-fullyear '-' date-month '-' date-mday
+date-fullyear   = 4DIGIT
+date-month      = 2DIGIT  ; 01-12
+date-mday       = 2DIGIT  ; 01-28, 01-29, 01-30, 01-31 based on
+; month/year
+time-hour       = 2DIGIT  ; 00-23
+time-minute     = 2DIGIT  ; 00-59
+time-second     = 2DIGIT  ; 00-58, 00-59, 00-60 based on leap second
+; rules
+time-secfrac    = '.' 1*DIGIT
+time-numoffset  = ('+' / '-') time-hour ':' time-minute
+time-offset     = 'Z' / time-numoffset
+
+partial-time    = time-hour ':' time-minute ':' time-second
+[time-secfrac]
+full-time       = partial-time time-offset
+  ")
+
 (def weekday-parser
   (insta/parser grammar-day :input-format :abnf))
 
@@ -39,18 +64,21 @@ S-HUGZ-OK = ':S-HUGZ-OK'
 (def zmq-ex-parser
   (insta/parser zmq-ex-grammar :input-format :abnf))
 
-(println "This text is printed from src/panini/core.cljs. Go ahead and edit it and see reloading in action.")
+(def iso8601-parser
+  (insta/parser iso8601-grammar :input-format :abnf))
 
 (defn multiply [a b] (* a b))
 
 ;; define your app data so that it doesn't get over-written on reload
 (defonce app-state (atom {:text "Panini - ABNF editor"
-                          :input zmq-ex-input
-                          :grammar zmq-ex-grammar
                           :grammar-error ""
+                          :input example-dt
+                          :grammar iso8601-grammar
                           ;; this is derived data
-                          :parser zmq-ex-parser
+                          :parser iso8601-parser
                           }))
+                          ;;:grammar zmq-ex-grammar
+                          ;;:parser zmq-ex-parser}))
 
 ;; TODO: Error should be in a more specific "failure-type", not in js/Error e
 (defn try-parse-grammar! [grammar]
@@ -92,9 +120,24 @@ S-HUGZ-OK = ':S-HUGZ-OK'
                    :class     ["input_active" "input_error"]
                    :style     {:background-color "#EEE"
                                :width 600
-                               :height 400}
+                               :height 300}
                    :on-change (fn [e]
                                 (try-parse-input! (.. e -target -value)))}]
+
+       ;; TODO: Rewrite rules here
+       [:textarea {:type      "text"
+                   :value     "rules"
+                   :allow-full-screen true
+                   :autofocus  true
+                   :spellcheck false
+                   :id        "insta-input-2"
+                   :class     ["input_active" "input_error"]
+                   :style     {:background-color "#EEE"
+                               :width 600
+                               :height 100}
+                   :on-change (fn [e]
+                                (prn "rules" e))}]
+
        #_[:h3 "Result"]
        [:pre (parse-or-error (rum/react app-state))]]
       [:div#right
