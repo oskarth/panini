@@ -61,30 +61,37 @@
 (rum/defc hello-world < rum/reactive []
   (let [input "mon"]
     [:div
-     [:h1 (:text @app-state)]
-     [:h3 "Instaparse grammar"]
-     [:textarea {:type      "text"
-                 :value     (:grammar (rum/react app-state))
-                 :allow-full-screen true
-                 :id        "insta-grammar"
-                 :class     ["input_active" "input_error"]
-                 :style     {:background-color "#EEE"
-                             :width 400
-                             :height 400}
-                 :on-change (fn [e]
-                              (try-parse-grammar! (.. e -target -value)))}]
-     [:pre (:grammar-error (rum/react app-state))]
-     [:h3 "Instaparse input"]
-     [:input {:type      "text"
-              :value     (:input (rum/react app-state))
-              :allow-full-screen true
-              :id        "insta-input"
-              :class     ["input_active" "input_error"]
-              :style     {:background-color "#EEE"}
-              :on-change (fn [e]
-                           (try-parse-input! (.. e -target -value)))}]
-     [:h3 "Instaparse result"]
-     [:pre (parse-or-error (rum/react app-state))]]))
+     [:div
+      [:h1 (:text @app-state)]]
+     [:div#wrapper
+      [:div#left
+       [:h3 "Input"]
+       [:textarea {:type      "text"
+                   :value     (:input (rum/react app-state))
+                   :allow-full-screen true
+                   :id        "insta-input"
+                   :class     ["input_active" "input_error"]
+                   :style     {:background-color "#EEE"
+                               :width 600
+                               :height 400}
+                   :on-change (fn [e]
+                                (try-parse-input! (.. e -target -value)))}]
+       #_[:h3 "Result"]
+       [:pre (parse-or-error (rum/react app-state))]]
+      [:div#right
+       [:h3 "Grammar"]
+       [:textarea {:type      "text"
+                   :value     (:grammar (rum/react app-state))
+                   :allow-full-screen true
+                   :id        "insta-grammar"
+                   :class     ["input_active" "input_error"]
+                   :style     {:background-color "#EEE"
+                               :width 600
+                               :height 400}
+                   :on-change (fn [e]
+                                (try-parse-grammar! (.. e -target -value)))}]
+       [:pre (:grammar-error (rum/react app-state))]]
+      ]]))
 
 (defn mount [el]
   (rum/mount (hello-world) el))
