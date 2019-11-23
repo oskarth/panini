@@ -129,54 +129,61 @@ full-time       = partial-time time-offset
                           :input example-dt
                           :grammar iso8601-grammar-hide
                           ;; this is derived data
-                          :parser iso8601-parser
-                          }))
-                          ;;:grammar zmq-ex-grammar
-                          ;;:parser zmq-ex-parser}))
+                          :parser iso8601-parser}))
+
+;;:grammar zmq-ex-grammar
+;;:parser zmq-ex-parser}))
+
+;; XXX: This is hacky af
+(defn hacky-transform [m]
+  (into {}
+        (map (fn [[k v]]
+               [k (cond (= v '(comp int str)) (comp int str)
+                        :else (do
+                                (let [err (str "Unable to recognize expression (NYI?): " v)]
+                                  (prn err)
+                                  (swap! app-state assoc
+                                         ;; XXX: Not really grammar error
+                                         :grammar-error err)
+                                  :xxx)))])
+             m)))
+
 
 ;; TODO: Error should be in a more specific "failure-type", not in js/Error e
 (defn try-parse-grammar! [grammar]
-  (try (insta/get-failure (insta/parser grammar :input-format :abnf))
+(try (insta/get-failure (insta/parser grammar :input-format :abnf))
+     (swap! app-state assoc
+            :parser (insta/parser grammar :input-format :abnf)
+            :grammar grammar
+            :grammar-error "")
+     (catch :default e
        (swap! app-state assoc
-              :parser (insta/parser grammar :input-format :abnf)
               :grammar grammar
-              :grammar-error "")
-       (catch :default e
-         (swap! app-state assoc
-                :grammar grammar
-                :grammar-error e))))
+              :grammar-error e))))
 
 (defn try-parse-input! [x]
-  (swap! app-state assoc :input x))
+(swap! app-state assoc :input x))
 
 ;; XXX: no validation, YOLO
 ;; TODO: Catch bad forms
 (defn try-parse-rules! [rules]
-  (let [form (reader/read-string rules)]
-    (prn "FROM:" (type (:date-fullyear form))  #_((:date-fullyear form) "1" "2" "3"))
+  (let [form (hacky-transform (reader/read-string rules))]
+    (prn "FORM:" form #_((:date-fullyear form) "1" "2" "3"))
     (if (map? form)
       (swap! app-state assoc
              :rules rules
              :transformer form)
       (swap! app-state assoc
              :rules rules))))
-             ;; TODO: show errors
+;; TODO: show errors
 
 (defn parse-or-error [{:keys [parser input transformer]}]
-  (if (insta/failure? (parser input))
-    (pr-str (parser input))
-    (with-out-str
-      (pprint/pprint
-       (insta/transform
-        {};; transformer
-        ;; TODO: We want this
-        #_{:date-fullyear (comp int str)
-           :date-month    (comp int str)
-           :date-mday     (comp int str)
-           :time-hour     (comp int str)
-           :time-minute   (comp int str)
-           :time-second   (comp int str)}
-        (parser input))))))
+(if (insta/failure? (parser input))
+  (pr-str (parser input))
+  (with-out-str
+    (pprint/pprint
+     (insta/transform
+      transformer (parser input))))))
 
 (defn get-app-element []
   (gdom/getElement "app"))
