@@ -42,7 +42,7 @@
 (defn try-parse-grammar! [grammar]
   (try (insta/get-failure (insta/parser grammar :input-format :abnf))
        (swap! app-state assoc
-              :parser (insta/parser grammar)
+              :parser (insta/parser grammar :input-format :abnf)
               :grammar grammar
               :grammar-error "")
        (catch :default e
